@@ -1,1 +1,2 @@
 # hw3_churn
+This problem is based on one of [Kaggle's Playground Series of competitions](https://www.kaggle.com/docs/competitions). The Playground Series is a nice way to practice building predictive models by "providing interesting and approachable datasets for our community to practice their machine learning skills". This assignment will focus on building simple classification models for predicting bank customer churn. 
