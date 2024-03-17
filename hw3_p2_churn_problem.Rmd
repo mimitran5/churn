@@ -1,0 +1,276 @@
+---
+title: "hw3_p2_churn"
+output: html_document
+date: "2024-02-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This problem is based on one of [Kaggle's Playground Series of competitions](https://www.kaggle.com/docs/competitions). The Playground Series is a nice way to practice building predictive models by "providing interesting and approachable datasets for our community to practice their machine learning skills". 
+
+You do **NOT** need to download any data from Kaggle. I've created a smaller dataset with some other modifications for use in our HW problem. The datafile, `churn.csv`, is available in the `data` subfolder.
+
+This particular [playground dataset involves data about bank customers](https://www.kaggle.com/competitions/playground-series-s4e1) with the target variable being a binary indicator of whether or not the customer left the bank (`Exited`), or "churned". The playground dataset was constructed using another [Kaggle dataset on bank customer churn prediction](https://www.kaggle.com/datasets/shubhammeshram579/bank-customer-churn-prediction). Follow the preceeding link for information about the variables in this dataset. 
+
+This assignment will focus on building simple classification models for
+predicting bank customer churn. You'll be doing your work right in this R Markdown document. Feel free to save it first with a modified filename that includes your name. For example, mine would be **hw3_p2_churn_isken.Rmd**.
+
+You'll likely need a bunch of libraries. I've included a few here but you should add any others that you need. If you don't need some of these, feel free to delete such lines.
+
+```{r}
+library(dplyr)   # Group by analysis and other SQLish things.
+library(ggplot2) # Plotting, of course
+library(corrplot) # Correlation plots
+library(caret)   # Many aspects of predictive modeling
+library(skimr)  # An automated EDA tool 
+```
+**MAJOR (10%) HACKER EXTRA** Version control
+
+Create a new R Project for this assignment. Put the project under version control with git. Create a private GitHub repository for this project. Use git and GitHub as you go to do commits periodically and push them to your remote repository. After you have completed the assignment and pushed your last commit to your GitHub repo, add me as a Collaborator (my GitHub username is misken) so that I can see your repo.
+
+I cover use of git and GitHub with R Studio in this module on our course web page:
+
+* [http://www.sba.oakland.edu/faculty/isken/courses/mis5470_f23/git_intro.html](http://www.sba.oakland.edu/faculty/isken/courses/mis5470_f23/git_intro.html)
+
+This Hacker Extra is worth 10% of the total number of points in the assignment.
+
+## Step 1: Read in data
+
+Read the `churn.csv` file from the `data` subfolder into a dataframe named `churn`.
+
+```{r read_churn}
+# ??? <- ???
+```
+
+Use `str`, `summary`, and `skim` to get a sense of the data. 
+The binary target variable is `Exited` where 1 indicates that the customer left the bank (they "churned"). You'll notice that some of the fields are numeric and some are character data. You might also notice that there are fewer variables in our churn dataset than in the original Kaggle versions.
+
+## Step 2: Factor conversions
+
+Some of the variables clearly should be factors. Change all of the variables to factors that you think should be. Include an explanation of why each of these variables should be converted to factors.
+
+```{r factor_conversions}
+
+```
+
+## Step 3 - Partition into training and test sets
+
+We will use the [caret](https://topepo.github.io/caret/) package to do the partitioning of our data into training and test dataframes. Just run this chunk to create training and test datasets. This way we'll
+all be working with the same datasets. Notice that the test set is 20% of
+the full dataset.
+
+```{r partition}
+# Simple partition into train (80%) and test (20%) set 
+set.seed(687) # Do NOT change this
+trainIndex <- createDataPartition(churn$Exited, p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+
+churn_train <- churn[as.vector(trainIndex), ]  
+churn_test <- churn[-as.vector(trainIndex), ]
+
+```
+
+Find the number of customers and the percentage of customers for the two `Exited` levels. You'll
+see that there are about 20% of the bank customers exited.
+
+```{r target_prop_check_train}
+
+```
+
+
+## Step 4: EDA
+
+Do some EDA to try to uncover some relationships that may end up being
+useful in building a predictive model for `Exited`. You learned
+things in HW2 which should be useful here. You should **ONLY** use `churn_train` for your EDA. You should explore all of the variables.
+
+
+## Step 5 - Building and evaluation of predictive classification models
+
+Now that you know a little more about the data, it's time to start building a
+few classification models for `Exited`. We will start out using overall prediction accuracy
+as our metric but we might want to consider other metrics.
+
+**QUESTION** Why might overall prediction accuracy not be the most appropriate metric to consider? What other
+metrics might be important and why?
+
+> PUT YOUR ANSWER HERE
+
+### Fit a null model
+
+A very simple model would be to simply predict that `Exited` is equal to 0. On
+the training data we saw that we'd be ~80% accurate.
+
+Let's create this null model and run a confusion matrix on its "predictions" for both the training
+and the test data.
+
+```{r tree_null}
+# Create a vector of 0's
+model_train_null <- rep(0, nrow(churn_train))
+model_test_null <- rep(0, nrow(churn_test))
+
+cm_train_null <- caret::confusionMatrix(as.factor(model_train_null), churn_train$Exited, positive = "1")
+cm_train_null
+
+cm_test_null <- caret::confusionMatrix(as.factor(model_test_null), churn_test$Exited, positive = "1")
+cm_test_null
+```
+
+**QUESTION** A few questions:
+
+* Are you surprised that the performance of the null model is almost identical on test and train? Why or why not?
+* Explain the sensitivity and specificity values. 
+
+> PUT ANSWER HERE
+
+So, as we begin fitting more complicated models, remember that we need to
+outperform the null model to make it worth it to use more complicated models.
+
+Now I'm going to ask you to fit three models:
+
+* a logistic regression model
+* a simple decision tree
+* a random forest
+
+We covered all three of these modeling techniques in the class notes.
+
+For each model type, you should:
+
+* fit the model on the training data,
+* assess the model's performance on the training data using the `confusionMatrix` function,
+* use the model to make predictions on the test data,
+* assess the model's performance on the test data using the `confusionMatrix` function,
+* discuss the results
+
+In your discussion of the results you should talk about things like:
+
+* how accurate is the model in predicting on the test data
+* is there evidence of overfitting?
+* how does the model do in terms of other metrics like sensitivity and specificity
+* other things you deem important.
+
+### Fit logistic regression models
+
+You'll start by creating a logistic regression model to predict `Exited`. Since there
+are not that many variables, let's use all of them. Here's a code skeleton to help you get started:
+
+**Hint**: There's an easy way to specify your model formula to include all of the predictor variables
+without typing out all the variable names. 
+
+```{r lr1_train}
+# Fit model to training data
+# model_lr1 <- glm(??? ~ ???, 
+#                 data=???, family=???(link="???"))
+
+## Convert fitted model values to fitted classes. Use 0.5 as the
+#  threshold for classifying a case as a 1.
+
+# class_train_lr1 <- as.factor(???)
+                          
+# cm_train_lr1 <- confusionMatrix(???, ???, positive="1")
+# cm_train_lr1
+```
+
+Now, let's predict on test data.
+
+```{r lr1_test}
+
+# pred_lr1 <- predict(???, newdata = ???, type = "???")
+
+# class_test_lr1 <- as.factor(???)
+                          
+# cm_test_lr1 <- confusionMatrix(???, ???, positive="1")
+# cm_test_lr1
+
+```
+
+**QUESTION** How did accuracy, sensitivity and specificity change when predicting on test data instead of the training data?
+
+> PUT ANSWER HERE
+
+Now change the threshold from 0.5 to 0.4 and create a new model using this new threshold. How does the sensitivity and specificity change as compared to our first logistic regression model? Explain why this happens?
+
+```{r increase_sensitivity}
+
+```
+
+> PUT ANSWER HERE
+
+
+### Fit simple decision tree model
+
+Now create a simple decision tree model to predict `Exited`. Again,
+use all the variables.
+
+```{r tree1_train}
+# model_tree1 <- ???(b_fetal_health ~ ???, data=???)
+
+# class_train_tree1 <- predict(???, type="???")
+
+# cm_train_tree1 <- confusionMatrix(???, ???, positive="1")
+# cm_train_tree1
+```
+
+Create a plot of your decision tree.
+
+```{r decision_tree_plot}
+
+```
+
+Explain the bottom left node of your tree. What conditions have to be true for a case to end up being classified by that node? What do those three numbers in the node mean? What does the color of the node mean?
+
+> PUT ANSWER HERE
+
+Now, let's predict on test data.
+
+```{r tree1_test}
+
+# pred_tree1 <- predict(???, newdata = ???, type = "???")
+
+# cm_test_tree1 <- confusionMatrix(???, ???, positive="1")
+# cm_test_tree1
+
+```
+
+**QUESTION** How does the performance of the decision tree compare to your
+logistic regression model? 
+
+> PUT ANSWER HERE
+
+## Fit random forest model
+
+Finally, fit a random forest model.
+
+```{r rf1_train}
+
+```
+
+Now, let's predict on test data.
+
+```{r rf1_test}
+
+
+```
+
+
+**QUESTION** Summarize the performance of all three of your models (logistic, tree, random forest)? Is their evidence of overfitting in any of these model and what is your evidence for your answer? Add code chunks as needed.
+
+> PUT ANSWER HERE
+
+
+**QUESTION** If you had to pick one to use in an actual financial environment, which model would you use and why? As a manager in charge of retention, what model performance metrics are you most interested in? What are the basic tradeoffs you see in terms of the initiatives you might undertake in response to such a model? For example, if you were really interested in reducing the number of customers exiting, maybe there are some things you might do to incent high risk (of exiting) customers to stay. Discuss.
+
+
+**HACKER EXTRA**
+
+Create a variable importance plot for your random forest to try to get a sense of which variables are most important in predicting customers likely to churn. Build another random forest using only the top 5 or so variables
+suggested by the importance plot. How does the performance of this reduced model compare to the original model?
+
+```{r importance}
+
+```
